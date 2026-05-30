@@ -1,0 +1,372 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.shell{display:flex;min-height:700px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
+.nav{width:210px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);flex-shrink:0;display:flex;flex-direction:column}
+.nav-hdr{padding:14px 14px 10px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.nav-title{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.08em}
+.nav-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:3px}
+.nav-list{flex:1;overflow-y:auto;padding:6px 0}
+.nav-item{display:flex;align-items:center;gap:7px;padding:7px 12px;font-size:12px;color:var(--color-text-secondary);cursor:pointer;border-left:2px solid transparent}
+.nav-item:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+.nav-item.active{background:var(--color-background-primary);color:var(--color-text-primary);border-left-color:#3C3489;font-weight:500}
+.nav-item i{font-size:14px;flex-shrink:0}
+.nav-count{margin-left:auto;font-size:10px;background:var(--color-background-tertiary);border-radius:20px;padding:1px 6px;color:var(--color-text-tertiary)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0}
+.srch{display:flex;align-items:center;gap:7px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:5px 10px;flex:1}
+.srch input{background:none;border:none;outline:none;font-size:12px;color:var(--color-text-primary);width:100%;font-family:var(--font-sans)}
+.srch input::placeholder{color:var(--color-text-tertiary)}
+.srch i{color:var(--color-text-tertiary);font-size:14px;flex-shrink:0}
+.sec-label{font-size:12px;color:var(--color-text-secondary);white-space:nowrap}
+.content{flex:1;overflow-y:auto;padding:14px 16px}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.fbtn{font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:none;color:var(--color-text-secondary);cursor:pointer;font-family:var(--font-sans)}
+.fbtn:hover,.fbtn.on{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+.card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:8px;overflow:hidden;background:var(--color-background-primary)}
+.card-head{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer}
+.card-head:hover{background:var(--color-background-secondary)}
+.lcode{font-size:10px;font-weight:500;color:var(--color-text-tertiary);min-width:50px;font-family:var(--font-mono)}
+.lname{font-size:12px;font-weight:500;color:var(--color-text-primary);flex:1;min-width:0}
+.chips{display:flex;gap:5px;flex-shrink:0;align-items:center}
+.chip{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.cf{background:#FCEBEB;color:#A32D2D}
+.cm{background:#FAEEDA;color:#854F0B}
+.ci{background:#EAF3DE;color:#3B6D11}
+.chevron{color:var(--color-text-tertiary);font-size:14px;transition:transform .15s;flex-shrink:0}
+.chevron.open{transform:rotate(180deg)}
+.body{padding:0 12px 12px;border-top:0.5px solid var(--color-border-tertiary)}
+.body-inner{padding-top:10px}
+.def{font-size:12px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px}
+.stat-lbl{font-size:10px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.stat-val{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.empty{text-align:center;padding:40px 20px;color:var(--color-text-tertiary);font-size:13px}
+</style>
+
+<h2 class="sr-only">The Haven Penal Code</h2>
+<div class="shell">
+<nav class="nav">
+  <div class="nav-hdr"><div class="nav-title">Penal Code</div><div class="nav-sub" id="totalCount"></div></div>
+  <div class="nav-list" id="navList"></div>
+</nav>
+<div class="main">
+  <div class="topbar">
+    <div class="srch"><i class="ti ti-search" aria-hidden="true"></i><input type="text" id="srchIn" placeholder="Search charges, codes…"></div>
+    <div class="sec-label" id="secLabel">All Sections</div>
+  </div>
+  <div class="content">
+    <div class="filter-row"><button class="fbtn on" data-f="all">All</button><button class="fbtn" data-f="Felony">Felony</button><button class="fbtn" data-f="Misdemeanor">Misdemeanor</button><button class="fbtn" data-f="Infraction">Infraction</button></div>
+    <div id="lawList"></div>
+  </div>
+</div>
+</div>
+
+<script>
+const SECS=[
+  {id:"all",icon:"ti-list",label:"All Statutes"},
+  {id:"homicide",icon:"ti-skull",label:"Homicide"},
+  {id:"person",icon:"ti-user-x",label:"Crimes Against Person"},
+  {id:"property",icon:"ti-building",label:"Crimes Against Property"},
+  {id:"weapons",icon:"ti-gun",label:"Weapons Offenses"},
+  {id:"vehicles",icon:"ti-car",label:"Vehicle & Traffic"},
+  {id:"drugs",icon:"ti-pill",label:"Narcotics & Substances"},
+  {id:"sex",icon:"ti-alert-triangle",label:"Sex Offenses"},
+  {id:"juvenile",icon:"ti-users",label:"Offenses Involving Minors"},
+  {id:"gangs",icon:"ti-star",label:"Gang & Organized Crime"},
+  {id:"public",icon:"ti-shield",label:"Public Order & Safety"},
+  {id:"fraud",icon:"ti-file-x",label:"Fraud & Financial"},
+  {id:"cyber",icon:"ti-device-laptop",label:"Cybercrime"},
+  {id:"govt",icon:"ti-building-bank",label:"Government & Justice"},
+  {id:"animal",icon:"ti-paw",label:"Animal Offenses"},
+  {id:"env",icon:"ti-leaf",label:"Environmental"},
+  {id:"misc",icon:"ti-dots",label:"Miscellaneous"},
+];
+
+const L=[
+  // HOMICIDE
+  {s:"homicide",c:"187",n:"Murder — First Degree",t:"Felony",sen:"Life / Death Penalty",fin:"$0",d:"Premeditated, deliberate killing of a human being with malice aforethought. Requires planning or deliberation before the act."},
+  {s:"homicide",c:"187(B)",n:"Murder — Second Degree",t:"Felony",sen:"25 years to life",fin:"$0",d:"An intentional killing committed without premeditation, but with malice aforethought — in the heat of passion or reckless disregard for human life."},
+  {s:"homicide",c:"192(A)",n:"Voluntary Manslaughter",t:"Felony",sen:"3–11 years",fin:"$10,000",d:"Intentional killing in the heat of passion upon adequate provocation, without premeditation."},
+  {s:"homicide",c:"192(B)",n:"Involuntary Manslaughter",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"An unintentional killing resulting from criminal negligence or a lawful act performed without due caution."},
+  {s:"homicide",c:"191.5",n:"Vehicular Manslaughter — DUI",t:"Felony",sen:"4–10 years",fin:"$10,000",d:"Causing the death of another person while operating a vehicle under the influence of alcohol or drugs with gross negligence."},
+  {s:"homicide",c:"192(C)",n:"Vehicular Manslaughter",t:"Misdemeanor",sen:"Up to 1 year",fin:"$10,000",d:"Causing the death of another person while operating a vehicle through ordinary (non-gross) negligence."},
+  {s:"homicide",c:"664/187",n:"Attempted Murder",t:"Felony",sen:"5–9 years (life if 1st degree)",fin:"$0",d:"A direct, ineffectual act toward killing another person with the specific intent to kill."},
+
+  // PERSON
+  {s:"person",c:"240",n:"Assault",t:"Misdemeanor",sen:"Up to 6 months",fin:"$2,000",d:"An intentional, unlawful attempt or threat to commit violent injury upon another, placing them in reasonable fear of harm."},
+  {s:"person",c:"245(A)",n:"Assault with a Deadly Weapon",t:"Felony",sen:"2–12 years",fin:"$10,000",d:"Assault using a firearm, knife, vehicle, or any object capable of causing great bodily injury or death."},
+  {s:"person",c:"245(B)",n:"Assault with a Caustic Chemical",t:"Felony",sen:"2–5 years",fin:"$10,000",d:"Throwing, placing, or causing any caustic chemical, flammable substance, or corrosive acid to be placed on another person."},
+  {s:"person",c:"242",n:"Battery",t:"Misdemeanor",sen:"Up to 6 months",fin:"$2,000",d:"Willful and unlawful use of force or violence upon another person, including any harmful or offensive touching."},
+  {s:"person",c:"243(D)",n:"Battery — Serious Bodily Injury",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Battery resulting in bone fracture, concussion, loss of consciousness, or disfigurement."},
+  {s:"person",c:"243(C)",n:"Battery on a Peace Officer",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Willful and unlawful battery committed against a peace officer, EMT, firefighter, or other protected public servant in the line of duty."},
+  {s:"person",c:"207",n:"Kidnapping",t:"Felony",sen:"5 years to life",fin:"$0",d:"Taking, holding, or detaining a person against their will by force, threat, or deception and moving them to another location."},
+  {s:"person",c:"210.5",n:"False Imprisonment of Hostage",t:"Felony",sen:"3–8 years",fin:"$0",d:"False imprisonment using force, fraud, or threat committed against a person to prevent or delay arrest."},
+  {s:"person",c:"236",n:"False Imprisonment",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Unlawful restraint of a person's personal liberty without lawful justification."},
+  {s:"person",c:"422",n:"Criminal Threats",t:"Felony",sen:"Up to 3 years",fin:"$10,000",d:"Willfully threatening to commit a crime resulting in death or great bodily injury, causing the victim sustained fear."},
+  {s:"person",c:"646.9",n:"Stalking",t:"Felony",sen:"16 months–4 years",fin:"$5,000",d:"Willfully and repeatedly following, harassing, or threatening another person to the point of placing them in reasonable fear for their safety."},
+  {s:"person",c:"273.5",n:"Domestic Violence — Corporal Injury",t:"Felony",sen:"2–4 years",fin:"$6,000",d:"Willfully inflicting corporal injury resulting in a traumatic condition upon a spouse, cohabitant, or fellow parent."},
+  {s:"person",c:"273(A)",n:"Child Abuse",t:"Felony",sen:"2–6 years",fin:"$10,000",d:"Willfully causing or permitting a child to suffer unjustifiable physical pain, injury, or danger to their health."},
+  {s:"person",c:"368",n:"Elder Abuse",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Physical abuse, neglect, false imprisonment, or financial exploitation of a person aged 65 or older."},
+  {s:"person",c:"664/243",n:"Attempted Battery",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"A direct, ineffectual act toward committing battery on another person."},
+  {s:"person",c:"245(C)",n:"Assault on a Public Official",t:"Felony",sen:"3–5 years",fin:"$10,000",d:"Assault with a deadly weapon or by means of force likely to produce great bodily injury against a judge, prosecutor, public defender, or elected official."},
+  {s:"person",c:"647.6",n:"Annoying or Molesting a Child",t:"Misdemeanor",sen:"Up to 1 year",fin:"$5,000",d:"Engaging in conduct directed at a child that a normal person would find disturbing or offensive motivated by an unnatural or abnormal sexual interest."},
+  {s:"person",c:"236.1",n:"Human Trafficking",t:"Felony",sen:"5–20 years",fin:"$500,000",d:"Depriving or violating the liberty of another person with intent to obtain labor, services, or for purposes of a commercial sex act."},
+
+  // PROPERTY
+  {s:"property",c:"459(A)",n:"Burglary — First Degree (Residential)",t:"Felony",sen:"2–6 years",fin:"$10,000",d:"Unlawful entry into an inhabited dwelling with intent to commit theft or any felony therein."},
+  {s:"property",c:"459(B)",n:"Burglary — Second Degree (Commercial)",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Unlawful entry into any commercial building, vehicle, vessel, or aircraft with intent to commit theft or a felony."},
+  {s:"property",c:"487(A)",n:"Grand Theft — Property",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Theft of money, property, or labor valued over $950."},
+  {s:"property",c:"487(B)",n:"Grand Theft — Firearm",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Theft of any firearm regardless of value."},
+  {s:"property",c:"487(C)",n:"Grand Theft — Auto",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Theft of a motor vehicle valued over $950 or any vehicle by key override."},
+  {s:"property",c:"488",n:"Petty Theft",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Theft of property valued at $950 or less."},
+  {s:"property",c:"211(A)",n:"Robbery — First Degree",t:"Felony",sen:"3–9 years",fin:"$0",d:"Taking property from another person by force or fear in an inhabited dwelling, transit vehicle, or using a weapon."},
+  {s:"property",c:"211(B)",n:"Robbery — Second Degree",t:"Felony",sen:"2–5 years",fin:"$0",d:"Taking property from another person by force or fear, not constituting first-degree robbery."},
+  {s:"property",c:"215",n:"Carjacking",t:"Felony",sen:"3–9 years",fin:"$0",d:"Taking a motor vehicle from another person's immediate possession by force or fear."},
+  {s:"property",c:"451(A)",n:"Arson — Inhabited Structure",t:"Felony",sen:"3–8 years",fin:"$50,000",d:"Willfully setting fire to an inhabited structure, causing potential injury to occupants."},
+  {s:"property",c:"451(B)",n:"Arson — Structure or Forest",t:"Felony",sen:"2–6 years",fin:"$25,000",d:"Willfully setting fire to any uninhabited structure, forest, or wildland."},
+  {s:"property",c:"452",n:"Reckless Burning",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Recklessly setting fire to or burning any structure, forest, or property causing damage."},
+  {s:"property",c:"594",n:"Vandalism",t:"Misdemeanor",sen:"Up to 1 year",fin:"$10,000",d:"Malicious defacing, damaging, or destroying real or personal property belonging to another."},
+  {s:"property",c:"602",n:"Trespassing",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Entering or remaining on private land, buildings, or posted property without consent."},
+  {s:"property",c:"496",n:"Receiving Stolen Property",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Buying, receiving, concealing, or withholding property known to be stolen."},
+  {s:"property",c:"530",n:"Vandalism of Government Property",t:"Felony",sen:"16 months–3 years",fin:"$25,000",d:"Defacing, destroying, or damaging publicly owned property including roads, signs, government buildings, or vehicles."},
+  {s:"property",c:"537",n:"Defrauding an Innkeeper",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Obtaining food, lodging, fuel, or services from a business with intent to defraud the owner of payment."},
+  {s:"property",c:"591",n:"Damaging Phone / Utility Lines",t:"Felony",sen:"Up to 3 years",fin:"$5,000",d:"Maliciously cutting, severing, or tampering with any telephone, telegraph, cable, or electrical line."},
+  {s:"property",c:"499(C)",n:"Theft of Trade Secrets",t:"Felony",sen:"2–4 years",fin:"$50,000",d:"Stealing, copying, or fraudulently appropriating trade secrets for personal use or to benefit a competitor."},
+  {s:"property",c:"PRP-001",n:"Looting",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Theft from a structure damaged or destroyed during a state of emergency, natural disaster, or civil unrest."},
+
+  // WEAPONS
+  {s:"weapons",c:"25400",n:"Carrying Concealed Firearm",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Carrying any concealed firearm on one's person or in a vehicle without a valid permit."},
+  {s:"weapons",c:"25850",n:"Carrying Loaded Firearm in Public",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Carrying a loaded firearm on the person or in a vehicle in any public place or street."},
+  {s:"weapons",c:"12022",n:"Firearm Use During Felony",t:"Felony",sen:"+10 years (enhancement)",fin:"$0",d:"Use, brandishing, or discharge of a firearm during commission of a felony. Mandatory consecutive sentence."},
+  {s:"weapons",c:"33220",n:"Possession of Illegal Weapon",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Possession of an unregistered automatic firearm, short-barreled shotgun, suppressor, or explosive device."},
+  {s:"weapons",c:"246",n:"Shooting at Inhabited Dwelling",t:"Felony",sen:"3–7 years",fin:"$0",d:"Discharging a firearm at an inhabited building, occupied vehicle, aircraft, or watercraft."},
+  {s:"weapons",c:"417",n:"Brandishing a Weapon",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Drawing or exhibiting any deadly weapon in a rude, angry, or threatening manner."},
+  {s:"weapons",c:"12034",n:"Discharging a Firearm from a Vehicle",t:"Felony",sen:"3–7 years",fin:"$0",d:"Willfully and maliciously discharging a firearm from a motor vehicle at another person."},
+  {s:"weapons",c:"12308",n:"Throwing Explosives",t:"Felony",sen:"3–6 years",fin:"$10,000",d:"Maliciously throwing, projecting, or placing any explosive, destructive device, or incendiary device."},
+  {s:"weapons",c:"WPN-001",n:"Felon in Possession of Firearm",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Possession of a firearm by a person previously convicted of a felony or subject to a domestic violence restraining order."},
+  {s:"weapons",c:"WPN-002",n:"Possession of Firearm on School Grounds",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Bringing or possessing a firearm on the grounds of a K-12 school or within 1,000 feet of a school."},
+  {s:"weapons",c:"WPN-003",n:"Unlawful Discharge of Firearm",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Willfully and recklessly discharging any firearm in a grossly negligent manner that could result in injury or death."},
+  {s:"weapons",c:"WPN-004",n:"Possession of Unregistered Firearm",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Possessing a firearm that has not been registered in the state's firearm registry."},
+  {s:"weapons",c:"WPN-005",n:"Armed Robbery Enhancement",t:"Felony",sen:"+5 years (enhancement)",fin:"$0",d:"Committing robbery while armed with a deadly or dangerous weapon. Stacks on underlying robbery charge."},
+
+  // VEHICLES & TRAFFIC
+  {s:"vehicles",c:"2800.2",n:"Evading Police — Reckless",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Willfully fleeing a pursuing officer with willful or wanton disregard for the safety of persons or property."},
+  {s:"vehicles",c:"2800.1",n:"Evading Police — Misdemeanor",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Willfully fleeing a pursuing officer without reckless endangerment."},
+  {s:"vehicles",c:"23152(A)",n:"DUI — Alcohol",t:"Misdemeanor",sen:"Up to 6 months (1st), 1 year (2nd)",fin:"$1,000",d:"Operating a motor vehicle with a blood alcohol content of 0.08% or higher."},
+  {s:"vehicles",c:"23152(F)",n:"DUI — Drugs",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Operating a motor vehicle while under the influence of any drug that impairs safe driving."},
+  {s:"vehicles",c:"23153",n:"DUI Causing Injury",t:"Felony",sen:"16 months–4 years",fin:"$5,000",d:"Driving under the influence of alcohol or drugs and causing bodily injury to another person."},
+  {s:"vehicles",c:"20001",n:"Hit and Run — Injury / Death",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Driver involved in an accident causing injury or death who flees without rendering aid or identifying themselves."},
+  {s:"vehicles",c:"20002",n:"Hit and Run — Property",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Driver involved in a collision causing only property damage who fails to stop and exchange information."},
+  {s:"vehicles",c:"22350",n:"Speeding — Unsafe Speed",t:"Infraction",sen:"N/A",fin:"$350",d:"Operating a vehicle faster than is reasonable and prudent for existing conditions."},
+  {s:"vehicles",c:"22349",n:"Speeding 100+ mph",t:"Misdemeanor",sen:"Up to 30 days",fin:"$500",d:"Operating a motor vehicle at a speed exceeding 100 mph on any highway."},
+  {s:"vehicles",c:"23103",n:"Reckless Driving",t:"Misdemeanor",sen:"Up to 90 days",fin:"$1,000",d:"Operating a vehicle in willful or wanton disregard for the safety of persons or property."},
+  {s:"vehicles",c:"12500",n:"Driving Without a License",t:"Infraction",sen:"N/A",fin:"$250",d:"Operating a motor vehicle on a public road without a valid driver's license."},
+  {s:"vehicles",c:"14601",n:"Driving on Suspended License",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Operating a motor vehicle while one's driving privilege is suspended or revoked."},
+  {s:"vehicles",c:"VEH-001",n:"Failure to Stop — Police Signal",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Failure to immediately stop a vehicle upon being signaled by a peace officer using lights and siren."},
+  {s:"vehicles",c:"VEH-002",n:"Street Racing",t:"Misdemeanor",sen:"Up to 90 days (1st), up to 1 year (2nd+)",fin:"$1,000",d:"Engaging in a motor vehicle speed contest on a public road not approved as a racing venue."},
+  {s:"vehicles",c:"VEH-003",n:"Vehicular Assault",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Intentionally using a motor vehicle as a weapon to strike, threaten, or injure another person."},
+  {s:"vehicles",c:"VEH-004",n:"Failure to Yield / Running Red Light",t:"Infraction",sen:"N/A",fin:"$250",d:"Failing to yield the right of way or running a red light or stop sign."},
+  {s:"vehicles",c:"VEH-005",n:"No Insurance",t:"Infraction",sen:"N/A",fin:"$500",d:"Operating a motor vehicle without valid proof of financial responsibility (insurance)."},
+  {s:"vehicles",c:"VEH-006",n:"Careless Driving",t:"Infraction",sen:"N/A",fin:"$250",d:"Operating a vehicle without due care and attention for road conditions or other users."},
+  {s:"vehicles",c:"VEH-007",n:"Driving the Wrong Way",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Deliberately driving against the flow of traffic on a divided highway, freeway ramp, or one-way street."},
+  {s:"vehicles",c:"VEH-008",n:"Failure to Stop at Accident Scene",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Being involved in or witnessing an accident and failing to stop and render aid or report the incident."},
+  {s:"vehicles",c:"VEH-009",n:"Expired Registration",t:"Infraction",sen:"N/A",fin:"$200",d:"Operating a motor vehicle with an expired registration or without current license plates."},
+  {s:"vehicles",c:"VEH-010",n:"Tampering with a Vehicle",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Willfully tampering with any vehicle or components thereof without authorization of the owner."},
+  {s:"vehicles",c:"VEH-011",n:"Throwing Objects at Vehicles",t:"Felony",sen:"16 months–3 years",fin:"$5,000",d:"Throwing any rock, bottle, or object at a moving vehicle, train, or vessel."},
+
+  // DRUGS
+  {s:"drugs",c:"11350",n:"Possession — Controlled Substance",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Unauthorized possession of a Schedule I or II controlled substance without a valid prescription."},
+  {s:"drugs",c:"11351",n:"Possession for Sale",t:"Felony",sen:"2–4 years",fin:"$20,000",d:"Possessing a controlled substance in quantity or manner indicating intent to sell."},
+  {s:"drugs",c:"11352",n:"Transportation / Distribution",t:"Felony",sen:"3–9 years",fin:"$20,000",d:"Transporting, importing, selling, or furnishing any controlled substance."},
+  {s:"drugs",c:"11378",n:"Possession of Meth / Dangerous Drugs for Sale",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Possessing methamphetamine, MDMA, PCP, or other dangerous drugs with intent to sell."},
+  {s:"drugs",c:"11550",n:"Under the Influence of Controlled Substance",t:"Misdemeanor",sen:"Up to 90 days",fin:"$500",d:"Being found in public while visibly under the influence of a controlled substance."},
+  {s:"drugs",c:"11364",n:"Possession of Drug Paraphernalia",t:"Misdemeanor",sen:"Up to 6 months",fin:"$500",d:"Possessing any pipe, device, or instrument used for unlawfully injecting or smoking a controlled substance."},
+  {s:"drugs",c:"11366",n:"Maintaining a Drug House",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Knowingly opening, maintaining, or operating a place for the purpose of unlawfully using, selling, or furnishing controlled substances."},
+  {s:"drugs",c:"11370.9",n:"Money Laundering — Drug Proceeds",t:"Felony",sen:"2–4 years",fin:"$250,000",d:"Receiving, acquiring, or maintaining interest in money known to be proceeds from drug trafficking activities."},
+  {s:"drugs",c:"DRG-001",n:"Possession of Marijuana — Excess Amount",t:"Infraction",sen:"N/A",fin:"$500",d:"Possessing more than the legally permitted personal-use amount of marijuana (over 28.5g / 8g concentrate)."},
+  {s:"drugs",c:"DRG-002",n:"Distribution to a Minor",t:"Felony",sen:"5–9 years",fin:"$20,000",d:"Selling, furnishing, or giving any controlled substance to a person under 18 years of age."},
+  {s:"drugs",c:"DRG-003",n:"Manufacture of Controlled Substance",t:"Felony",sen:"3–7 years",fin:"$50,000",d:"Manufacturing, processing, or synthesizing any controlled substance including methamphetamine, fentanyl, or MDMA."},
+  {s:"drugs",c:"DRG-004",n:"Possession of Fentanyl — Large Quantity",t:"Felony",sen:"3–9 years",fin:"$20,000",d:"Possessing fentanyl or fentanyl analogue in quantities suggesting trafficking (4g+ per FL standard)."},
+
+  // SEX OFFENSES
+  {s:"sex",c:"261",n:"Sexual Assault — Rape",t:"Felony",sen:"3 years to life",fin:"$0",d:"Non-consensual sexual intercourse achieved by force, threat, duress, or when victim is incapacitated."},
+  {s:"sex",c:"262",n:"Spousal Rape",t:"Felony",sen:"3–8 years",fin:"$0",d:"Non-consensual sexual intercourse with a spouse or former spouse by force, threat, or duress."},
+  {s:"sex",c:"288(A)",n:"Lewd Acts with a Minor",t:"Felony",sen:"3–8 years",fin:"$0",d:"Willfully committing any lewd or lascivious act upon or with the body of a child under 14, with intent to arouse."},
+  {s:"sex",c:"311",n:"Possession of Child Pornography",t:"Felony",sen:"16 months–3 years",fin:"$2,500",d:"Knowingly possessing, producing, or distributing obscene material depicting minors engaged in sexual conduct."},
+  {s:"sex",c:"314",n:"Indecent Exposure",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Willfully exposing one's genitals in a public place or in view of others who would be offended."},
+  {s:"sex",c:"647(B)",n:"Solicitation of Prostitution",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Soliciting or agreeing to engage in or agreeing to commission a lewd act in exchange for money."},
+  {s:"sex",c:"266H",n:"Pimping",t:"Felony",sen:"3–6 years",fin:"$10,000",d:"Knowingly deriving support or maintenance from the earnings of a person engaged in prostitution."},
+  {s:"sex",c:"266I",n:"Pandering",t:"Felony",sen:"3–6 years",fin:"$10,000",d:"Procuring, encouraging, or causing another person to enter into or persist in prostitution."},
+  {s:"sex",c:"SEX-001",n:"Sexual Battery",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Touching an intimate part of another person against their will for the purpose of sexual arousal or gratification."},
+  {s:"sex",c:"SEX-002",n:"Voyeurism",t:"Misdemeanor",sen:"Up to 1 year",fin:"$2,000",d:"Secretly viewing or recording another person in a place where they have a reasonable expectation of privacy."},
+  {s:"sex",c:"SEX-003",n:"Failure to Register as Sex Offender",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Willful failure of a registered sex offender to update or maintain registration as required by law."},
+
+  // JUVENILE / MINORS
+  {s:"juvenile",c:"272",n:"Contributing to Delinquency of a Minor",t:"Misdemeanor",sen:"Up to 1 year",fin:"$2,500",d:"Causing or encouraging a person under 18 to engage in behavior that would make them a ward of the court or delinquent."},
+  {s:"juvenile",c:"JUV-001",n:"Furnishing Alcohol to a Minor",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Purchasing, selling, or furnishing any alcoholic beverage to a person under 21 years of age."},
+  {s:"juvenile",c:"JUV-002",n:"Minor in Possession of Alcohol",t:"Infraction",sen:"N/A",fin:"$250",d:"A person under 21 years of age possessing or consuming any alcoholic beverage."},
+  {s:"juvenile",c:"JUV-003",n:"Curfew Violation",t:"Infraction",sen:"N/A",fin:"$100",d:"A minor remaining in any public place during hours designated as curfew hours by local ordinance."},
+  {s:"juvenile",c:"JUV-004",n:"Endangering the Welfare of a Child",t:"Felony",sen:"2–5 years",fin:"$10,000",d:"Knowingly acting in a manner likely to be injurious to the physical, mental, or moral welfare of a child."},
+  {s:"juvenile",c:"JUV-005",n:"Furnishing Weapons to a Minor",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Selling, transferring, or providing a deadly weapon to a person under 18 years of age."},
+
+  // GANGS & ORGANIZED CRIME
+  {s:"gangs",c:"186.22",n:"Gang Enhancement",t:"Felony",sen:"+2–15 years (enhancement)",fin:"$0",d:"Committing a felony for the benefit of, at the direction of, or in association with a criminal street gang."},
+  {s:"gangs",c:"GNG-001",n:"Active Gang Participation",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Willfully participating in a criminal street gang with knowledge that members engage in a pattern of criminal gang activity."},
+  {s:"gangs",c:"GNG-002",n:"Gang Recruitment — Minor",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Recruiting or soliciting a minor to participate in a criminal street gang through threat or coercion."},
+  {s:"gangs",c:"GNG-003",n:"RICO — Racketeering",t:"Felony",sen:"5–20 years",fin:"$250,000",d:"Participating in a pattern of racketeering activity connected to an enterprise, including extortion, bribery, murder, and trafficking."},
+  {s:"gangs",c:"GNG-004",n:"Money Laundering",t:"Felony",sen:"2–5 years",fin:"$500,000",d:"Engaging in financial transactions with proceeds derived from unlawful activity to conceal or disguise their origin."},
+  {s:"gangs",c:"GNG-005",n:"Criminal Conspiracy — Organized Crime",t:"Felony",sen:"Same as target offense",fin:"$10,000",d:"Agreement between two or more persons acting within a criminal enterprise to commit felony-level crimes."},
+
+  // PUBLIC ORDER & SAFETY
+  {s:"public",c:"148",n:"Resisting / Obstructing an Officer",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Willfully resisting, delaying, or obstructing any peace officer in the discharge of their duties."},
+  {s:"public",c:"69",n:"Resisting Executive Officer — Force",t:"Felony",sen:"Up to 3 years",fin:"$10,000",d:"Knowingly and unlawfully resisting any executive officer by use of force or violence."},
+  {s:"public",c:"415",n:"Disturbing the Peace",t:"Infraction",sen:"N/A",fin:"$400",d:"Fighting in public, making unreasonable noise, or using offensive words likely to provoke violence."},
+  {s:"public",c:"647(F)",n:"Public Intoxication",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Being found in public under the influence to a degree rendering the person unable to care for their safety."},
+  {s:"public",c:"405",n:"Rioting",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Participating in a riot — an assemblage of two or more persons using force or violence."},
+  {s:"public",c:"404",n:"Inciting a Riot",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Urging, instigating, directing, or aiding in the commission of a riot by another person."},
+  {s:"public",c:"182",n:"Criminal Conspiracy",t:"Felony",sen:"Same as underlying offense",fin:"$10,000",d:"Agreement between two or more persons to commit a crime with an overt act in furtherance thereof."},
+  {s:"public",c:"32",n:"Accessory After the Fact",t:"Felony",sen:"Up to 3 years",fin:"$5,000",d:"Harboring, concealing, or aiding a known felon to evade arrest or punishment."},
+  {s:"public",c:"31",n:"Aiding and Abetting",t:"Same as principal",sen:"Same as principal",fin:"Same as principal",d:"Directly or indirectly aiding, facilitating, encouraging, or assisting the commission of a crime."},
+  {s:"public",c:"136.1",n:"Witness Intimidation",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Preventing or dissuading a witness or victim from attending or giving testimony at a judicial proceeding."},
+  {s:"public",c:"PUB-001",n:"Unlawful Assembly",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Assembling with two or more persons with intent to commit unlawful acts or acts likely to cause public terror."},
+  {s:"public",c:"PUB-002",n:"Failure to Disperse",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Remaining at the scene of an unlawful assembly or riot after being ordered to disperse by a peace officer."},
+  {s:"public",c:"PUB-003",n:"Discharging Firearm in Residential Area",t:"Felony",sen:"16 months–3 years",fin:"$5,000",d:"Willfully and maliciously discharging a firearm in a grossly negligent manner in a residential neighborhood."},
+  {s:"public",c:"PUB-004",n:"Noise Violation",t:"Infraction",sen:"N/A",fin:"$200",d:"Creating unreasonable or excessive noise in a residential or commercial area between 10 PM and 7 AM."},
+  {s:"public",c:"PUB-005",n:"Illegal Dumping",t:"Misdemeanor",sen:"Up to 6 months",fin:"$3,000",d:"Dumping or abandoning refuse, waste, or hazardous materials on public or private property without authorization."},
+  {s:"public",c:"PUB-006",n:"Obstruction of Traffic / Roadway",t:"Infraction",sen:"N/A",fin:"$300",d:"Willfully obstructing the free movement of any person or vehicle on a public road or walkway."},
+  {s:"public",c:"PUB-007",n:"Possession of Stolen Emergency Equipment",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Possessing any stolen emergency lights, sirens, police radio equipment, or law enforcement gear."},
+
+  // FRAUD & FINANCIAL
+  {s:"fraud",c:"470",n:"Forgery",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Signing another person's name or falsely making, altering, or counterfeiting a document with intent to defraud."},
+  {s:"fraud",c:"530.5",n:"Identity Theft",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Obtaining and using another person's personal identifying information for any unlawful purpose."},
+  {s:"fraud",c:"487.3",n:"Grand Theft by Fraud",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Obtaining property valued over $950 by false pretenses, fraud, or deceit."},
+  {s:"fraud",c:"518",n:"Extortion",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Obtaining property or acts from another through wrongful use of force, threats, or fear."},
+  {s:"fraud",c:"550",n:"Insurance Fraud",t:"Felony",sen:"2–5 years",fin:"$150,000",d:"Presenting a false or fraudulent insurance claim or making material misrepresentations to obtain benefits."},
+  {s:"fraud",c:"484(G)",n:"Credit Card Fraud",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Fraudulent use of an access card, credit card, or account number with intent to defraud."},
+  {s:"fraud",c:"FRD-001",n:"Bank Robbery",t:"Felony",sen:"10–20 years",fin:"$0",d:"Taking money or property belonging to a bank, credit union, or financial institution by force, intimidation, or extortion."},
+  {s:"fraud",c:"FRD-002",n:"Counterfeiting Currency",t:"Felony",sen:"2–10 years",fin:"$250,000",d:"Fraudulently making, forging, or altering any bill, note, bond, or currency of the United States."},
+  {s:"fraud",c:"FRD-003",n:"Welfare / Government Benefits Fraud",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Knowingly making false statements or misrepresentations to obtain public assistance, welfare, or government benefits."},
+  {s:"fraud",c:"FRD-004",n:"Ponzi / Investment Fraud",t:"Felony",sen:"2–5 years",fin:"$500,000",d:"Operating a fraudulent investment scheme, promising returns from fictitious or unsustainable sources."},
+  {s:"fraud",c:"FRD-005",n:"Tax Evasion",t:"Felony",sen:"2–5 years",fin:"$250,000",d:"Willfully evading the assessment or payment of any tax owed to state or federal government."},
+  {s:"fraud",c:"FRD-006",n:"Bribery — Private",t:"Misdemeanor",sen:"Up to 1 year",fin:"$5,000",d:"Offering, giving, or receiving any compensation to influence a private party's decision in a position of trust."},
+  {s:"fraud",c:"FRD-007",n:"Fraud on Law Enforcement",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Making false statements, providing false identification, or misrepresenting facts to a peace officer during an official investigation."},
+  {s:"fraud",c:"FRD-008",n:"Embezzlement",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Fraudulent appropriation of property entrusted to one's care by an employer, principal, or organization."},
+
+  // CYBERCRIME
+  {s:"cyber",c:"502",n:"Unauthorized Computer Access",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Knowingly accessing a computer system, network, or database without authorization or in excess of authorization."},
+  {s:"cyber",c:"CYB-001",n:"Cyberstalking",t:"Felony",sen:"16 months–3 years",fin:"$5,000",d:"Using electronic communications, the internet, or electronic devices to harass, stalk, or threaten another person."},
+  {s:"cyber",c:"CYB-002",n:"Electronic Harassment",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Using electronic communications to repeatedly harass, annoy, or threaten another person."},
+  {s:"cyber",c:"CYB-003",n:"Unauthorized Interception of Communications",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Intentionally intercepting, attempting to intercept, or procuring any person to intercept electronic communications."},
+  {s:"cyber",c:"CYB-004",n:"Distribution of Private Images",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Distributing intimate or sexual images of a person without their consent with intent to cause harm."},
+
+  // GOVERNMENT & JUSTICE OFFENSES
+  {s:"govt",c:"4550",n:"Escape from Custody",t:"Felony",sen:"1–3 years (consecutive)",fin:"$0",d:"Willfully escaping from lawful custody or a detention facility. Sentence runs consecutively."},
+  {s:"govt",c:"118",n:"Perjury",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Willfully giving false testimony under oath regarding a material fact in a judicial proceeding."},
+  {s:"govt",c:"67",n:"Bribery of a Public Official",t:"Felony",sen:"2–4 years",fin:"$50,000",d:"Offering, giving, or accepting anything of value to influence a public official's discharge of duties."},
+  {s:"govt",c:"GOV-001",n:"Officer Impersonation",t:"Felony",sen:"Up to 3 years",fin:"$10,000",d:"Falsely representing oneself as a peace officer or wearing a uniform / badge to impersonate an officer."},
+  {s:"govt",c:"GOV-002",n:"Filing a False Police Report",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Knowingly reporting a crime to police that the person knows to be false."},
+  {s:"govt",c:"GOV-003",n:"Failure to Identify",t:"Infraction",sen:"N/A",fin:"$250",d:"Refusal to provide name, DOB, and address to a peace officer during a lawful detention."},
+  {s:"govt",c:"GOV-004",n:"Obstruction of Justice",t:"Felony",sen:"Up to 3 years",fin:"$10,000",d:"Impeding, corrupting, or obstructing the due administration of justice in a legal proceeding."},
+  {s:"govt",c:"GOV-005",n:"Contempt of Court",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Willful disobedience of a lawful court order, or disruptive conduct in a court proceeding."},
+  {s:"govt",c:"GOV-006",n:"Tampering with Evidence",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Knowingly altering, destroying, concealing, or fabricating evidence with intent to affect a legal investigation."},
+  {s:"govt",c:"GOV-007",n:"Failure to Comply with Court Order",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Willful failure to comply with a valid court order including restraining orders, bail conditions, or injunctions."},
+  {s:"govt",c:"GOV-008",n:"Misconduct in Office",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"A public official using their position to commit fraud, abuse of power, or unlawful acts in their official capacity."},
+  {s:"govt",c:"GOV-009",n:"Jury Tampering",t:"Felony",sen:"2–4 years",fin:"$10,000",d:"Attempting to influence a juror's deliberations through bribery, intimidation, or improper communication."},
+
+  // ANIMAL OFFENSES
+  {s:"animal",c:"597",n:"Animal Cruelty",t:"Misdemeanor",sen:"Up to 1 year",fin:"$20,000",d:"Maliciously or negligently maiming, wounding, torturing, or killing any animal, or failing to provide adequate food, water, and care."},
+  {s:"animal",c:"597.5",n:"Dogfighting",t:"Felony",sen:"16 months–3 years",fin:"$50,000",d:"Owning, possessing, keeping, or training animals for the purpose of fighting, or attending or betting on a dogfight."},
+  {s:"animal",c:"ANM-001",n:"Unlawful Killing of a Police Animal",t:"Felony",sen:"3–5 years",fin:"$20,000",d:"Intentionally killing or causing serious injury to a law enforcement animal while it is performing its official duties."},
+  {s:"animal",c:"ANM-002",n:"Animal Abandonment",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Willfully abandoning a dog, cat, or other domestic animal on any street, road, or public property."},
+
+  // ENVIRONMENTAL
+  {s:"env",c:"ENV-001",n:"Illegal Dumping of Hazardous Waste",t:"Felony",sen:"2–4 years",fin:"$25,000",d:"Illegally disposing of hazardous, toxic, or chemical waste in a manner posing risk to public health or environment."},
+  {s:"env",c:"ENV-002",n:"Illegal Discharge into Waterway",t:"Felony",sen:"16 months–3 years",fin:"$50,000",d:"Discharging pollutants, chemicals, or waste into rivers, lakes, or other waterways without authorization."},
+  {s:"env",c:"ENV-003",n:"Unlawful Burning",t:"Misdemeanor",sen:"Up to 6 months",fin:"$5,000",d:"Open burning of refuse, materials, or vegetation in violation of air quality regulations or fire restrictions."},
+  {s:"env",c:"ENV-004",n:"Poaching / Unlawful Wildlife Taking",t:"Misdemeanor",sen:"Up to 1 year",fin:"$5,000",d:"Taking, trapping, or killing fish, game, or protected wildlife without a valid license or outside permitted seasons."},
+
+  // MISCELLANEOUS
+  {s:"misc",c:"591.5",n:"Interference with Emergency Communications",t:"Felony",sen:"16 months–3 years",fin:"$10,000",d:"Maliciously jamming, disabling, or interfering with any emergency communication system or 911 dispatch network."},
+  {s:"misc",c:"148.2",n:"False Fire Alarm",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"Willfully and knowingly giving a false alarm of fire to a fire department or public safety agency."},
+  {s:"misc",c:"MSC-001",n:"Illegal Gambling Operation",t:"Felony",sen:"16 months–3 years",fin:"$50,000",d:"Operating or maintaining an unlicensed gambling establishment or engaging in illegal bookmaking, numbers, or sports betting."},
+  {s:"misc",c:"MSC-002",n:"Loan Sharking / Usury",t:"Felony",sen:"16 months–3 years",fin:"$250,000",d:"Making or collecting a loan at an interest rate in excess of the legal maximum, using threats or intimidation for collection."},
+  {s:"misc",c:"MSC-003",n:"Impersonation — Medical / Legal Professional",t:"Felony",sen:"Up to 3 years",fin:"$10,000",d:"Falsely representing oneself as a licensed physician, attorney, EMT, or other licensed professional."},
+  {s:"misc",c:"MSC-004",n:"Disorderly Conduct",t:"Infraction",sen:"N/A",fin:"$300",d:"Engaging in fighting, making unreasonable noise, using offensive language, or otherwise causing public inconvenience and annoyance."},
+  {s:"misc",c:"MSC-005",n:"Failure to Render Aid",t:"Misdemeanor",sen:"Up to 1 year",fin:"$1,000",d:"A person at the scene of an accident, medical emergency, or crime who is able to render aid but willfully fails to do so."},
+  {s:"misc",c:"MSC-006",n:"Graffiti",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Defacing any public or private property with paint, ink, chalk, or other substance without the owner's consent."},
+  {s:"misc",c:"MSC-007",n:"Jaywalking — Dangerous",t:"Infraction",sen:"N/A",fin:"$100",d:"Crossing a roadway outside of a marked crosswalk or against a traffic signal in a manner creating danger."},
+  {s:"misc",c:"MSC-008",n:"Possession of Burglary Tools",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Possessing any picklock, key, crow, bit, or other instrument with the intent to commit a burglary or theft."},
+  {s:"misc",c:"MSC-009",n:"Soliciting / Loitering for Drug Purposes",t:"Misdemeanor",sen:"Up to 6 months",fin:"$500",d:"Loitering in any public place with the intent to buy, sell, or use any controlled substance."},
+  {s:"misc",c:"MSC-010",n:"Discharge of Duties Under the Influence",t:"Misdemeanor",sen:"Up to 6 months",fin:"$1,000",d:"Performing official duties as a public employee, officer, or contracted public service worker while under the influence of alcohol or drugs."},
+];
+
+let activeSec="all", activeF="all", srch="", exp={};
+
+function chipCls(t){
+  if(t==="Felony") return "chip cf";
+  if(t==="Misdemeanor") return "chip cm";
+  return "chip ci";
+}
+
+function buildNav(){
+  const counts={};
+  L.forEach(l=>{counts[l.s]=(counts[l.s]||0)+1;});
+  let html="";
+  SECS.forEach(s=>{
+    const cnt=s.id==="all"?L.length:(counts[s.id]||0);
+    html+=`<div class="nav-item ${activeSec===s.id?"active":""}" data-s="${s.id}"><i class="ti ${s.icon}" aria-hidden="true"></i>${s.label}<span class="nav-count">${cnt}</span></div>`;
+  });
+  document.getElementById("navList").innerHTML=html;
+  document.querySelectorAll(".nav-item").forEach(el=>el.addEventListener("click",()=>{
+    activeSec=el.dataset.s;
+    document.getElementById("secLabel").textContent=SECS.find(s=>s.id===activeSec)?.label||"All Statutes";
+    buildNav(); renderLaws();
+  }));
+}
+
+function renderLaws(){
+  const q=srch.toLowerCase();
+  const filtered=L.filter(l=>{
+    if(activeSec!=="all"&&l.s!==activeSec) return false;
+    if(activeF!=="all"&&l.t!==activeF) return false;
+    if(q&&!l.n.toLowerCase().includes(q)&&!l.c.toLowerCase().includes(q)&&!l.d.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const list=document.getElementById("lawList");
+  if(!filtered.length){list.innerHTML=`<div class="empty"><i class="ti ti-search" style="font-size:22px;display:block;margin-bottom:8px" aria-hidden="true"></i>No charges found</div>`;return;}
+  list.innerHTML=filtered.map(l=>{
+    const open=exp[l.c];
+    return `<div class="card">
+      <div class="card-head" data-code="${l.c}">
+        <span class="lcode">${l.c}</span>
+        <span class="lname">${l.n}</span>
+        <div class="chips"><span class="${chipCls(l.t)}">${l.t}</span></div>
+        <i class="ti ti-chevron-down chevron ${open?"open":""}" aria-hidden="true"></i>
+      </div>
+      ${open?`<div class="body"><div class="body-inner">
+        <p class="def">${l.d}</p>
+        <div class="stats">
+          <div class="stat"><div class="stat-lbl">Sentence</div><div class="stat-val">${l.sen}</div></div>
+          <div class="stat"><div class="stat-lbl">Fine / Bail</div><div class="stat-val">${l.fin}</div></div>
+        </div>
+      </div></div>`:""}
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".card-head").forEach(el=>el.addEventListener("click",()=>{
+    exp[el.dataset.code]=!exp[el.dataset.code]; renderLaws();
+  }));
+}
+
+document.getElementById("totalCount").textContent=L.length+" statutes";
+document.getElementById("srchIn").addEventListener("input",e=>{srch=e.target.value;renderLaws();});
+document.querySelector(".filter-row").addEventListener("click",e=>{
+  const b=e.target.closest(".fbtn");
+  if(!b)return;
+  activeF=b.dataset.f;
+  document.querySelectorAll(".fbtn").forEach(x=>x.classList.toggle("on",x.dataset.f===activeF));
+  renderLaws();
+});
+buildNav(); renderLaws();
+</script>
